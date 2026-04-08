@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botanica - Garden Advisory Chatbot</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+</head>
+<body>
+    <div class="chatbot-container">
+        <!-- Header -->
+        <header class="chatbot-header">
+            <div class="header-info">
+                <div class="bot-avatar">
+                   <span class="material-icons-outlined">local_florist</span>
+                </div>
+                <div class="bot-details">
+                    <h1>Botanica</h1>
+                    <span class="status">● Online</span>
+                </div>
+            </div>
+            <p class="subtitle">Your Personal Garden Advisor</p>
+        </header>
+
+        <!-- Chat Area -->
+        <main class="chat-box" id="chat-box">
+            <!-- Initial Greeting -->
+            <div class="message bot-message">
+                <div class="message-content">
+                    <p>Hello! I'm Botanica 🌿. I can help you with plant care, garden planning, soil health, and botany. What can I help you grow today?</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="chatbot-footer">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Ask about your plants..." autocomplete="off" required>
+                <button type="submit" id="send-btn">
+                    <span class="material-icons-outlined">send</span>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <!-- Script that uses marked.js to render Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
