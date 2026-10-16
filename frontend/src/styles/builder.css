@@ -38,6 +38,100 @@
     margin-bottom: 1.5rem;
 }
 
+.garden-planner {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+}
+
+.garden-planner h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary-dark);
+    font-size: 1rem;
+}
+
+.garden-planner > p {
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.garden-planner label {
+    display: block;
+    margin: 0.65rem 0 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.garden-planner input,
+.garden-planner select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: white;
+    color: var(--text-main);
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.garden-planner .design-btn {
+    margin-top: 0.85rem;
+}
+
+.garden-planner .design-btn:disabled,
+.garden-plan-preview .design-btn:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.planner-error {
+    margin: 0.75rem 0 0 !important;
+    color: #b91c1c !important;
+    font-size: 0.85rem !important;
+}
+
+.garden-plan-preview {
+    max-width: 760px;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.garden-plan-preview h2 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-dark);
+    font-size: 1.2rem;
+}
+
+.garden-plan-preview p {
+    margin: 0 0 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.garden-plan-preview ul {
+    margin: 0.5rem 0 0.75rem 1.25rem;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.garden-plan-preview .design-btn {
+    width: auto;
+}
+
 .controls-group {
     margin-bottom: 1.5rem;
     display: flex;
@@ -170,6 +264,7 @@
     flex-direction: column;
     padding: 2rem;
     background: #e8f5e9; /* Light green grass feel */
+    min-height: 0;
 }
 
 .canvas-header {
@@ -207,6 +302,10 @@
 
 .canvas-item.locked {
     cursor: default;
+}
+
+.canvas-item.dragging {
+    z-index: 6;
 }
 
 .canvas-item:active:not(.locked) {
@@ -278,4 +377,24 @@
     background: rgba(67, 160, 71, 0.1);
     pointer-events: none;
     z-index: -1;
+}
+
+.delete-btn {
+    border: 0;
+    padding: 0;
+    line-height: 1;
+    font-family: inherit;
+}
+
+.builder-body #root {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.canvas-wrapper {
+    display: flex;
+    flex: 1;
+    min-width: 0;
 }

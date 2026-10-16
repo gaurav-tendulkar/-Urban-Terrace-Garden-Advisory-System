@@ -1,10 +1,13 @@
 {
-  "name": "test_chatbot",
+  "name": "botanica-garden-advisory",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "backend/server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "nodemon backend/server.js",
+    "dev:frontend": "vite frontend --config frontend/vite.config.mjs",
+    "build": "vite build frontend --config frontend/vite.config.mjs",
+    "start": "node backend/server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,9 +15,15 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.48.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "cors": "^2.8.6",
+    "concurrently": "^9.2.1",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
-    "nodemon": "^3.1.14"
+    "marked": "^15.0.12",
+    "nodemon": "^3.1.14",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vite": "^6.3.5"
   }
 }

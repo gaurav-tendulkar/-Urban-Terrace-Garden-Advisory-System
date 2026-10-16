@@ -1,4 +1,4 @@
 node_modules
 .env
-package-lock.json
-config/prompt.config.js
+frontend/dist
+backend/config
