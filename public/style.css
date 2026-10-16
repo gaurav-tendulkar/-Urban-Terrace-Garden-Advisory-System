@@ -640,3 +640,160 @@ section {
         font-size: 2.5rem;
     }
 }
+/* =========================================
+   SAVED GARDEN DESIGNS
+========================================= */
+
+.design-panel {
+    margin-top: 20px;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e0e5e9;
+    border-radius: 12px;
+}
+
+.design-panel h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #055b65;
+}
+
+.design-panel h3 .material-icons-outlined {
+    font-size: 21px;
+}
+
+.design-panel label {
+    display: block;
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.design-panel input,
+.design-panel select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid #d5dce1;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #263238;
+    font: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.design-panel input:focus,
+.design-panel select:focus {
+    outline: 2px solid #055b65;
+    outline-offset: 1px;
+}
+
+.design-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #055b65;
+    border-radius: 7px;
+    background: #055b65;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.design-btn:hover {
+    background: #03474f;
+}
+
+.design-btn .material-icons-outlined {
+    font-size: 18px;
+}
+
+.design-btn.secondary {
+    background: #ffffff;
+    color: #055b65;
+}
+
+.design-btn.secondary:hover {
+    background: #eef6f6;
+}
+
+.design-btn.danger {
+    border-color: #dc2626;
+    background: #ffffff;
+    color: #dc2626;
+}
+
+.design-btn.danger:hover {
+    background: #fef2f2;
+}
+
+.design-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.design-status {
+    margin: 12px 0 0;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.design-status.error {
+    color: #b91c1c;
+}
+
+/* Keep garden items visible and positioned correctly */
+.garden-canvas {
+    position: relative;
+}
+
+.canvas-item {
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.canvas-item:active {
+    cursor: grabbing;
+}
+
+.canvas-item.locked {
+    cursor: not-allowed;
+}
+
+.delete-btn {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+    .design-panel {
+        padding: 12px;
+    }
+
+    .design-btn {
+        min-height: 40px;
+    }
+}
+
+
+

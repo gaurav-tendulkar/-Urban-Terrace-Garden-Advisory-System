@@ -1,4 +1,4 @@
 node_modules
 .env
 package-lock.json
-server.js
+config/prompt.config.js

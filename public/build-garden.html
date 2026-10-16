@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botanica - Build Your Garden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="builder.css">
+</head>
+<body class="builder-body">
+    <!-- Navigation -->
+    <nav class="landing-nav builder-nav">
+        <div class="logo">
+            <span class="material-icons-outlined">local_florist</span>
+            <span>Botanica</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="chat.html" class="btn-primary-outline">Talk to AI</a></li>
+        </ul>
+    </nav>
+
+    <div class="builder-container">
+        <!-- Sidebar -->
+        <aside class="builder-sidebar">
+            <h2>Garden Elements</h2>
+            <div class="controls-group">
+                <label for="zone-select">Growing Zone:</label>
+                <select id="zone-select">
+                    <option value="warm">Warm/Tropical</option>
+                    <option value="temperate" selected>Temperate (Moderate)</option>
+                    <option value="cold">Cold/Short Season</option>
+                </select>
+            </div>
+            
+            <div class="controls-group toggle-group">
+                <label>
+                    <input type="checkbox" id="lock-toggle">
+                    <span class="material-icons-outlined">lock</span> Lock Canvas Items
+                </label>
+            </div>
+
+            
+<!-- Saved Garden Designs -->
+<div class="design-panel">
+    <h3>
+        <span class="material-icons-outlined">save</span>
+        My Garden Designs
+    </h3>
+
+    <label for="design-name">Design Name</label>
+    <input
+        type="text"
+        id="design-name"
+        placeholder="e.g. My Terrace Garden"
+        maxlength="60"
+    >
+
+    <button type="button" id="save-design" class="design-btn">
+        <span class="material-icons-outlined">save</span>
+        Save Current Design
+    </button>
+
+    <label for="saved-designs">Saved Designs</label>
+    <select id="saved-designs">
+        <option value="">Select a saved design</option>
+    </select>
+
+    <button type="button" id="load-design" class="design-btn">
+        <span class="material-icons-outlined">folder_open</span>
+        Load Design
+    </button>
+
+    <div class="design-actions">
+        <button type="button" id="rename-design" class="design-btn secondary">
+            Rename
+        </button>
+
+        <button type="button" id="delete-design" class="design-btn danger">
+            Delete
+        </button>
+    </div>
+
+    <p id="design-status" class="design-status" role="status"
+       aria-live="polite">
+        Your saved designs will appear here.
+    </p>
+</div>
+
+
+            <div class="elements-palette" id="palette">
+                <h3>Beds</h3>
+                <div class="palette-item" draggable="true" data-type="bed" data-shape="rect">
+                    <div class="icon-box rect-bed-icon"></div>
+                    <span>Rectangular Bed</span>
+                </div>
+                <div class="palette-item" draggable="true" data-type="bed" data-shape="circle">
+                    <div class="icon-box circle-bed-icon"></div>
+                    <span>Circular Bed</span>
+                </div>
+
+                <h3>Plants</h3>
+                <div class="palette-item" draggable="true" data-type="plant" data-plant="tomato" data-spacing="60">
+                    <span class="material-icons-outlined plant-icon item-tomato">grass</span>
+                    <span>Tomato (60cm)</span>
+                </div>
+                <div class="palette-item" draggable="true" data-type="plant" data-plant="carrot" data-spacing="20">
+                    <span class="material-icons-outlined plant-icon item-carrot">spa</span>
+                    <span>Carrot (20cm)</span>
+                </div>
+                <div class="palette-item" draggable="true" data-type="plant" data-plant="sunflower" data-spacing="80">
+                    <span class="material-icons-outlined plant-icon item-sunflower">local_fire_department</span>
+                    <span>Sunflower (80cm)</span>
+                </div>
+                <div class="palette-item" draggable="true" data-type="plant" data-plant="lettuce" data-spacing="30">
+                    <span class="material-icons-outlined plant-icon item-lettuce">eco</span>
+                    <span>Lettuce (30cm)</span>
+                </div>
+            </div>
+
+            <div class="calendar-panel active" id="calendar-panel">
+                <h3><span class="material-icons-outlined">calendar_month</span> Growing Calendar</h3>
+                <div id="calendar-content">
+                    <p class="empty-state">Add plants to your design to see their optimal scheduling.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="canvas-area">
+            <div class="canvas-header">
+                <h1>Design Your Space</h1>
+                <p>Drag items from the palette onto the canvas below. Move them around to plan spacing.</p>
+            </div>
+            <div class="garden-canvas" id="garden-canvas">
+                <!-- Drop area -->
+            </div>
+        </main>
+    </div>
+
+    <script src="builder.js"></script>
+</body>
+</html>
