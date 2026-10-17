@@ -27,7 +27,10 @@ const plantCalendar = {
   },
 };
 const plantNames = Object.keys(plantCalendar);
-const plantSpacing = { tomato: 60, carrot: 20, sunflower: 80, lettuce: 30 };
+const MIN_GARDEN_DIMENSION = 1;
+const MAX_GARDEN_DIMENSION = 20;
+const DEFAULT_GARDEN_DIMENSION = 4;
+const PIXELS_PER_METER = 100;
 
 function readDesigns() {
   const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -51,10 +54,21 @@ function isValidSnapshot(snapshot) {
   });
 }
 
+function clampItemToGarden(item, width, length) {
+  const itemWidth = item.type === 'bed' ? (item.shape === 'circle' ? 150 : 200) : 40;
+  const itemHeight = item.type === 'bed' ? (item.shape === 'circle' ? 150 : 100) : 40;
+  return {
+    ...item,
+    x: Math.min(item.x, Math.max(0, width * PIXELS_PER_METER - itemWidth)),
+    y: Math.min(item.y, Math.max(0, length * PIXELS_PER_METER - itemHeight)),
+  };
+}
+
 export default function GardenBuilder() {
   const nextId = useRef(0);
-  const dragData = useRef(null);
+  const itemDragData = useRef(null);
   const canvasRef = useRef(null);
+  const viewportRef = useRef(null);
   const [items, setItems] = useState([]);
   const [zone, setZone] = useState('temperate');
   const [locked, setLocked] = useState(false);
@@ -64,15 +78,12 @@ export default function GardenBuilder() {
   const [status, setStatus] = useState('Your saved designs will appear here.');
   const [statusIsError, setStatusIsError] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
-  const [plannerInputs, setPlannerInputs] = useState({
-    area: '4',
-    sunlight: 'partial sun',
-    budget: '5000',
-  });
-  const [gardenPlan, setGardenPlan] = useState(null);
-  const [planApplied, setPlanApplied] = useState(false);
-  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-  const [plannerError, setPlannerError] = useState('');
+  const [width, setWidth] = useState(DEFAULT_GARDEN_DIMENSION);
+  const [length, setLength] = useState(DEFAULT_GARDEN_DIMENSION);
+  const [canvasScale, setCanvasScale] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [mobileView, setMobileView] = useState('design');
+  const renderedScale = canvasScale * zoom;
 
   useEffect(() => {
     try {
@@ -89,26 +100,58 @@ export default function GardenBuilder() {
   }, [locked]);
 
   useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return undefined;
+
+    const updateScale = () => {
+      const availableWidth = viewport.clientWidth;
+      const availableHeight = viewport.clientHeight;
+      if (!availableWidth || !availableHeight) return;
+
+      const nextScale = Math.min(
+        1,
+        availableWidth / (width * PIXELS_PER_METER),
+        availableHeight / (length * PIXELS_PER_METER),
+      );
+      setCanvasScale((current) => (
+        Math.abs(current - nextScale) > 0.001 ? nextScale : current
+      ));
+    };
+
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(viewport);
+    updateScale();
+    return () => observer.disconnect();
+  }, [width, length]);
+
+  useEffect(() => {
     function moveItem(event) {
-      const drag = dragData.current;
+      const drag = itemDragData.current;
       if (!drag) return;
       setItems((current) => current.map((item) => (
         item.id === drag.id
-          ? { ...item, x: Math.max(0, drag.left + event.clientX - drag.startX), y: Math.max(0, drag.top + event.clientY - drag.startY) }
+          ? clampItemToGarden({
+            ...item,
+            x: Math.max(0, drag.left + (event.clientX - drag.startX) / renderedScale),
+            y: Math.max(0, drag.top + (event.clientY - drag.startY) / renderedScale),
+          }, width, length)
           : item
       )));
     }
     function stopDragging() {
-      dragData.current = null;
+      if (!itemDragData.current) return;
+      itemDragData.current = null;
       setDraggingId(null);
     }
-    window.addEventListener('mousemove', moveItem);
-    window.addEventListener('mouseup', stopDragging);
+    window.addEventListener('pointermove', moveItem);
+    window.addEventListener('pointerup', stopDragging);
+    window.addEventListener('pointercancel', stopDragging);
     return () => {
-      window.removeEventListener('mousemove', moveItem);
-      window.removeEventListener('mouseup', stopDragging);
+      window.removeEventListener('pointermove', moveItem);
+      window.removeEventListener('pointerup', stopDragging);
+      window.removeEventListener('pointercancel', stopDragging);
     };
-  }, []);
+  }, [renderedScale, width, length]);
 
   function setDesignStatus(message, isError = false) {
     setStatus(message);
@@ -133,24 +176,57 @@ export default function GardenBuilder() {
 
   function dropItem(event) {
     if (locked) return;
-    const transferData = dragData.current;
-    if (!transferData) return;
+    const serializedData = event.dataTransfer.getData('application/x-garden-item');
+    if (!serializedData) return;
+
+    let transferData;
+    try {
+      transferData = JSON.parse(serializedData);
+    } catch (error) {
+      console.error('Could not read garden palette drag data:', error);
+      return;
+    }
+
+    const isBed = transferData?.type === 'bed' && ['rect', 'circle'].includes(transferData.shape);
+    const isPlant = transferData?.type === 'plant'
+      && plantNames.includes(transferData.plant)
+      && Number.isFinite(transferData.spacing)
+      && transferData.spacing >= 0;
+    if (!isBed && !isPlant) return;
+
     const rect = event.currentTarget.getBoundingClientRect();
-    setItems((current) => [...current, makeItem(transferData, event.clientX - rect.left - 20, event.clientY - rect.top - 20)]);
-    dragData.current = null;
+    const newItem = makeItem(
+      transferData,
+      (event.clientX - rect.left) / renderedScale - 20,
+      (event.clientY - rect.top) / renderedScale - 20,
+    );
+    setItems((current) => [...current, clampItemToGarden(newItem, width, length)]);
   }
 
   function startPaletteDrag(event, data) {
-    dragData.current = data;
-    event.dataTransfer.setData('text/plain', 'palette-item');
+    event.dataTransfer.setData('application/x-garden-item', JSON.stringify(data));
+    event.dataTransfer.setData('text/plain', 'garden-item');
     event.dataTransfer.effectAllowed = 'copy';
+  }
+
+  function addPaletteItem(data) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const itemWidth = data.type === 'bed' ? (data.shape === 'circle' ? 150 : 200) : 40;
+    const itemHeight = data.type === 'bed' ? (data.shape === 'circle' ? 150 : 100) : 40;
+    const item = makeItem(
+      data,
+      (width * PIXELS_PER_METER - itemWidth) / 2,
+      (length * PIXELS_PER_METER - itemHeight) / 2,
+    );
+    setItems((current) => [...current, clampItemToGarden(item, width, length)]);
   }
 
   function startDrag(event, item) {
     if (locked || event.target.closest('.delete-btn')) return;
     const canvas = canvasRef.current;
     if (!canvas?.contains(event.currentTarget)) return;
-    dragData.current = {
+    itemDragData.current = {
       id: item.id,
       startX: event.clientX,
       startY: event.clientY,
@@ -161,63 +237,32 @@ export default function GardenBuilder() {
     event.preventDefault();
   }
 
-  function updatePlannerInput(event) {
-    const { name, value } = event.target;
-    setPlannerInputs((current) => ({ ...current, [name]: value }));
-    setGardenPlan(null);
-    setPlanApplied(false);
-    setPlannerError('');
+  function updateGardenDimension(dimension, value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < MIN_GARDEN_DIMENSION || parsed > MAX_GARDEN_DIMENSION) return;
+
+    const nextWidth = dimension === 'width' ? parsed : width;
+    const nextLength = dimension === 'length' ? parsed : length;
+    if (dimension === 'width') setWidth(parsed);
+    else setLength(parsed);
+
+    setItems((current) => current.map((item) => clampItemToGarden(item, nextWidth, nextLength)));
   }
 
-  async function generatePlan(event) {
-    event.preventDefault();
-    setIsGeneratingPlan(true);
-    setPlannerError('');
-    setGardenPlan(null);
-    setPlanApplied(false);
-
-    try {
-      const response = await fetch('/api/chat/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          area: Number(plannerInputs.area),
-          sunlight: plannerInputs.sunlight,
-          climate: zone,
-          budget: Number(plannerInputs.budget),
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to generate a garden plan. Please try again.');
-      }
-      setGardenPlan(data.plan);
-    } catch (error) {
-      console.error('Could not generate garden plan:', error);
-      setPlannerError(error.message || 'Unable to reach the garden planner. Check your connection and try again.');
-    } finally {
-      setIsGeneratingPlan(false);
+  function getSnapshotDimensions(snapshot) {
+    const snapshotWidth = snapshot.width ?? DEFAULT_GARDEN_DIMENSION;
+    const snapshotLength = snapshot.length ?? DEFAULT_GARDEN_DIMENSION;
+    if (
+      !Number.isFinite(snapshotWidth) ||
+      snapshotWidth < MIN_GARDEN_DIMENSION ||
+      snapshotWidth > MAX_GARDEN_DIMENSION ||
+      !Number.isFinite(snapshotLength) ||
+      snapshotLength < MIN_GARDEN_DIMENSION ||
+      snapshotLength > MAX_GARDEN_DIMENSION
+    ) {
+      return null;
     }
-  }
-
-  function applyGardenPlan() {
-    if (!gardenPlan || locked || planApplied) return;
-    const canvas = canvasRef.current?.querySelector('.garden-canvas');
-    const columns = Math.max(1, Math.floor(((canvas?.clientWidth || 500) - 48) / 88));
-    const recommendations = gardenPlan.plants.flatMap(({ plant, quantity }) => (
-      Array.from({ length: quantity }, () => ({ type: 'plant', plant, spacing: plantSpacing[plant] }))
-    ));
-
-    setItems((current) => [
-      ...current,
-      ...recommendations.map((item, index) => makeItem(
-        item,
-        24 + (index % columns) * 88,
-        24 + Math.floor(index / columns) * 88,
-      )),
-    ]);
-    setPlanApplied(true);
-    setDesignStatus(`Added ${recommendations.length} recommended plants to the canvas.`);
+    return { width: snapshotWidth, length: snapshotLength };
   }
 
   function updateZone(value) {
@@ -246,6 +291,8 @@ export default function GardenBuilder() {
     const snapshot = {
       version: 1,
       zone,
+      width,
+      length,
       items: items.map(({ id, ...item }) => item),
       updatedAt: new Date().toISOString(),
     };
@@ -285,9 +332,19 @@ export default function GardenBuilder() {
       setDesignStatus('This saved design is invalid or incompatible.', true);
       return;
     }
+    const dimensions = getSnapshotDimensions(snapshot);
+    if (!dimensions) {
+      setDesignStatus('This saved design has invalid garden dimensions.', true);
+      return;
+    }
     if (items.length && !window.confirm('Loading this design will replace the current canvas. Continue?')) return;
     setZone(snapshot.zone);
-    setItems(snapshot.items.map((item) => makeItem(item, item.x, item.y)));
+    setWidth(dimensions.width);
+    setLength(dimensions.length);
+    setItems(snapshot.items.map((item) => {
+      const positionedItem = clampItemToGarden(item, dimensions.width, dimensions.length);
+      return makeItem(positionedItem, positionedItem.x, positionedItem.y);
+    }));
     setDesignName(selectedDesign);
     setDesignStatus(`Garden design "${selectedDesign}" loaded successfully.`);
   }
@@ -368,7 +425,25 @@ export default function GardenBuilder() {
   return (
     <>
       <SiteNav builder />
-      <div className="builder-container">
+      <div className="builder-mobile-tabs" role="group" aria-label="Garden builder view">
+        <button
+          type="button"
+          className={mobileView === 'design' ? 'active' : ''}
+          aria-pressed={mobileView === 'design'}
+          onClick={() => setMobileView('design')}
+        >
+          Design Your Space
+        </button>
+        <button
+          type="button"
+          className={mobileView === 'elements' ? 'active' : ''}
+          aria-pressed={mobileView === 'elements'}
+          onClick={() => setMobileView('elements')}
+        >
+          Garden Elements
+        </button>
+      </div>
+      <div className={`builder-container mobile-view-${mobileView}`}>
         <GardenSidebar
           zone={zone}
           onZoneChange={updateZone}
@@ -390,18 +465,15 @@ export default function GardenBuilder() {
           statusIsError={statusIsError}
           plants={calendarPlants}
           onPaletteDrag={startPaletteDrag}
-          planner={{
-            area: plannerInputs.area,
-            sunlight: plannerInputs.sunlight,
-            budget: plannerInputs.budget,
-            isGenerating: isGeneratingPlan,
-            error: plannerError,
-            onChange: updatePlannerInput,
-            onSubmit: generatePlan,
-          }}
+          onPaletteTap={addPaletteItem}
+          width={width}
+          length={length}
+          onDimensionsChange={updateGardenDimension}
         />
-        <div ref={canvasRef} className="canvas-wrapper">
+        <div className="canvas-wrapper">
           <GardenCanvas
+            viewportRef={viewportRef}
+            canvasRef={canvasRef}
             items={items}
             locked={locked}
             draggingId={draggingId}
@@ -410,9 +482,12 @@ export default function GardenBuilder() {
               if (!locked) setItems((current) => current.filter((item) => item.id !== id));
             }}
             onStartDrag={startDrag}
-            gardenPlan={gardenPlan}
-            onApplyPlan={applyGardenPlan}
-            planApplied={planApplied}
+            width={width}
+            length={length}
+            scale={renderedScale}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onFit={() => setZoom(1)}
           />
         </div>
       </div>

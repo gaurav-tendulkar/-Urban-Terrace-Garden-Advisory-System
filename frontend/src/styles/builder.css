@@ -2,6 +2,8 @@
 .builder-body {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     height: 100vh;
     padding: 0;
     overflow: hidden;
@@ -38,7 +40,7 @@
     margin-bottom: 1.5rem;
 }
 
-.garden-planner {
+.garden-size-panel {
     margin-bottom: 1rem;
     padding: 1rem;
     border: 1px solid var(--primary);
@@ -46,31 +48,35 @@
     background: var(--primary-light);
 }
 
-.garden-planner h3 {
+.garden-size-panel h3 {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
     margin-bottom: 0.5rem;
     color: var(--primary-dark);
     font-size: 1rem;
 }
 
-.garden-planner > p {
+.garden-size-panel > p {
     margin-bottom: 0.75rem;
     color: var(--text-muted);
     font-size: 0.8rem;
     line-height: 1.4;
 }
 
-.garden-planner label {
+.garden-size-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.garden-size-panel label {
     display: block;
-    margin: 0.65rem 0 0.3rem;
+    margin-bottom: 0.3rem;
     font-size: 0.85rem;
     font-weight: 500;
 }
 
-.garden-planner input,
-.garden-planner select {
+.garden-size-panel input {
     width: 100%;
     min-width: 0;
     padding: 0.55rem;
@@ -82,54 +88,10 @@
     font-size: 0.85rem;
 }
 
-.garden-planner .design-btn {
-    margin-top: 0.85rem;
-}
-
-.garden-planner .design-btn:disabled,
-.garden-plan-preview .design-btn:disabled {
-    cursor: wait;
-    opacity: 0.65;
-}
-
-.planner-error {
-    margin: 0.75rem 0 0 !important;
-    color: #b91c1c !important;
-    font-size: 0.85rem !important;
-}
-
-.garden-plan-preview {
-    max-width: 760px;
-    margin-top: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-sm);
-    background: white;
-    box-shadow: var(--shadow-sm);
-}
-
-.garden-plan-preview h2 {
-    margin-bottom: 0.5rem;
+.garden-size-panel .garden-area-total {
+    margin: 0.6rem 0 0;
+    font-weight: 600;
     color: var(--primary-dark);
-    font-size: 1.2rem;
-}
-
-.garden-plan-preview p {
-    margin: 0 0 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.garden-plan-preview ul {
-    margin: 0.5rem 0 0.75rem 1.25rem;
-    color: var(--text-main);
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.garden-plan-preview .design-btn {
-    width: auto;
 }
 
 .controls-group {
@@ -178,6 +140,7 @@
     margin-bottom: 0.5rem;
     cursor: grab;
     transition: all 0.2s;
+    touch-action: manipulation;
 }
 
 .palette-item:active {
@@ -265,6 +228,7 @@
     padding: 2rem;
     background: #e8f5e9; /* Light green grass feel */
     min-height: 0;
+    overflow: hidden;
 }
 
 .canvas-header {
@@ -279,13 +243,96 @@
     color: var(--text-muted);
 }
 
-.garden-canvas {
+.canvas-header .canvas-dimensions {
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.canvas-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.canvas-fit-indicator {
+    padding: 0.25rem 0.55rem;
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    color: var(--primary-dark);
+    font-size: 0.75rem;
+}
+
+.canvas-zoom-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: white;
+}
+
+.canvas-zoom-controls button {
+    min-width: 36px;
+    min-height: 36px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.canvas-zoom-controls button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.canvas-zoom-controls span {
+    min-width: 3.25rem;
+    text-align: center;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.canvas-zoom-controls .canvas-zoom-fit {
+    min-width: 44px;
+    font-size: 0.85rem;
+}
+
+.garden-canvas-viewport {
     flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow: auto;
+    border-radius: var(--radius-lg);
+}
+
+.garden-canvas-frame {
+    position: relative;
+    flex: none;
+    margin: auto;
+}
+
+.garden-canvas {
+    flex: none;
     background: white;
     border: 2px dashed #b0bec5;
     border-radius: var(--radius-lg);
     position: relative;
     overflow: hidden;
+    transform-origin: top left;
     /* Grid background */
     background-image: 
         linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
@@ -298,6 +345,7 @@
     position: absolute;
     cursor: grab;
     user-select: none;
+    touch-action: none;
 }
 
 .canvas-item.locked {
@@ -397,4 +445,209 @@
     display: flex;
     flex: 1;
     min-width: 0;
+}
+
+.builder-mobile-tabs {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    .builder-body {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .builder-nav {
+        position: sticky;
+        top: 0;
+        padding: 0.75rem 1rem;
+    }
+
+    .builder-nav .logo {
+        font-size: 1.2rem;
+    }
+
+    .builder-nav .nav-links {
+        display: flex;
+        gap: 0.65rem;
+    }
+
+    .builder-nav .nav-links a {
+        font-size: 0.85rem;
+    }
+
+    .builder-nav .btn-primary-outline {
+        padding: 0.4rem 0.75rem;
+    }
+
+    .builder-container {
+        flex-direction: column;
+        flex: 1 0 auto;
+        overflow: visible;
+    }
+
+    .builder-mobile-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem 0;
+        background: white;
+    }
+
+    .builder-mobile-tabs button {
+        min-height: 44px;
+        padding: 0.6rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: white;
+        color: var(--text-main);
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .builder-mobile-tabs button.active {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary-dark);
+    }
+
+    .builder-container.mobile-view-design .builder-sidebar,
+    .builder-container.mobile-view-elements .canvas-wrapper {
+        display: none;
+    }
+
+    .builder-sidebar {
+        width: 100%;
+        flex: none;
+        overflow: visible;
+        padding: 1rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .builder-sidebar h2 {
+        margin-bottom: 1rem;
+    }
+
+    .controls-group {
+        margin-bottom: 1rem;
+    }
+
+    .controls-group select,
+    .garden-size-panel input,
+    .design-panel input,
+    .design-panel select {
+        min-height: 44px;
+        font-size: 1rem;
+    }
+
+    .toggle-group label {
+        min-height: 44px;
+    }
+
+    .elements-palette {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 0.75rem;
+    }
+
+    .elements-palette h3 {
+        grid-column: 1 / -1;
+    }
+
+    .palette-item {
+        min-width: 0;
+        min-height: 52px;
+        gap: 0.6rem;
+        padding: 0.65rem;
+        font-size: 0.9rem;
+    }
+
+    .calendar-panel {
+        margin-top: 1rem;
+    }
+
+    .canvas-wrapper {
+        flex: none;
+        width: 100%;
+        min-height: 65vh;
+        min-height: 65dvh;
+    }
+
+    .canvas-area {
+        width: 100%;
+        min-height: 65vh;
+        min-height: 65dvh;
+        padding: 1rem;
+    }
+
+    .canvas-header {
+        margin-bottom: 0.75rem;
+    }
+
+    .canvas-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .canvas-header p {
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+
+    .garden-canvas-viewport {
+        min-height: 0;
+        border-radius: var(--radius-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .builder-nav {
+        padding: 0.65rem 0.75rem;
+    }
+
+    .builder-nav .logo {
+        gap: 0.3rem;
+        font-size: 1.05rem;
+    }
+
+    .builder-nav .logo .material-icons-outlined {
+        font-size: 1.5rem;
+    }
+
+    .builder-nav .nav-links {
+        gap: 0.5rem;
+    }
+
+    .builder-nav .nav-links a {
+        font-size: 0.8rem;
+    }
+
+    .builder-nav .btn-primary-outline {
+        padding: 0.35rem 0.55rem;
+    }
+
+    .builder-sidebar {
+        padding: 0.85rem;
+    }
+
+    .garden-size-panel {
+        padding: 0.85rem;
+    }
+
+    .canvas-area {
+        padding: 0.85rem;
+    }
+
+    .canvas-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .canvas-fit-indicator {
+        font-size: 0.7rem;
+    }
 }

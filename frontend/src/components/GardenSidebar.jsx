@@ -1,5 +1,3 @@
-import GardenPlanner from './GardenPlanner.jsx';
-
 const plantOptions = [
   { plant: 'tomato', spacing: 60, icon: 'grass', iconClass: 'item-tomato', label: 'Tomato (60cm)' },
   { plant: 'carrot', spacing: 20, icon: 'spa', iconClass: 'item-carrot', label: 'Carrot (20cm)' },
@@ -25,21 +23,60 @@ export default function GardenSidebar({
   statusIsError,
   plants,
   onPaletteDrag,
-  planner,
+  width,
+  length,
+  onDimensionsChange,
+  onPaletteTap,
 }) {
+  function handlePaletteTap(event, data) {
+    if (event.pointerType === 'mouse') return;
+    event.preventDefault();
+    onPaletteTap(data);
+  }
+
   return (
     <aside className="builder-sidebar">
       <h2>Garden Elements</h2>
       <div className="controls-group">
         <label htmlFor="zone-select">Growing Zone:</label>
-        <select id="zone-select" value={zone} disabled={planner.isGenerating} onChange={(event) => onZoneChange(event.target.value)}>
+        <select id="zone-select" value={zone} onChange={(event) => onZoneChange(event.target.value)}>
           <option value="warm">Warm/Tropical</option>
           <option value="temperate">Temperate (Moderate)</option>
           <option value="cold">Cold/Short Season</option>
         </select>
       </div>
 
-      <GardenPlanner {...planner} />
+      <section className="garden-size-panel" aria-labelledby="garden-size-heading">
+        <h3 id="garden-size-heading">Garden Size</h3>
+        <p>Set your garden dimensions in meters.</p>
+        <div className="garden-size-inputs">
+          <div>
+            <label htmlFor="garden-width">Width (m)</label>
+            <input
+              id="garden-width"
+              type="number"
+              min="1"
+              max="20"
+              step="0.5"
+              value={width}
+              onChange={(event) => onDimensionsChange('width', event.target.value)}
+            />
+          </div>
+          <div>
+            <label htmlFor="garden-length">Length (m)</label>
+            <input
+              id="garden-length"
+              type="number"
+              min="1"
+              max="20"
+              step="0.5"
+              value={length}
+              onChange={(event) => onDimensionsChange('length', event.target.value)}
+            />
+          </div>
+        </div>
+        <p className="garden-area-total">Total area: {(width * length).toFixed(2)} m²</p>
+      </section>
 
       <div className="controls-group toggle-group">
         <label>
@@ -92,11 +129,11 @@ export default function GardenSidebar({
 
       <div className="elements-palette" id="palette">
         <h3>Beds</h3>
-        <div className="palette-item" draggable="true" data-type="bed" data-shape="rect" onDragStart={(event) => onPaletteDrag(event, { type: 'bed', shape: 'rect' })}>
+        <div className="palette-item" draggable="true" data-type="bed" data-shape="rect" onDragStart={(event) => onPaletteDrag(event, { type: 'bed', shape: 'rect' })} onPointerDown={(event) => handlePaletteTap(event, { type: 'bed', shape: 'rect' })}>
           <div className="icon-box rect-bed-icon" />
           <span>Rectangular Bed</span>
         </div>
-        <div className="palette-item" draggable="true" data-type="bed" data-shape="circle" onDragStart={(event) => onPaletteDrag(event, { type: 'bed', shape: 'circle' })}>
+        <div className="palette-item" draggable="true" data-type="bed" data-shape="circle" onDragStart={(event) => onPaletteDrag(event, { type: 'bed', shape: 'circle' })} onPointerDown={(event) => handlePaletteTap(event, { type: 'bed', shape: 'circle' })}>
           <div className="icon-box circle-bed-icon" />
           <span>Circular Bed</span>
         </div>
@@ -110,6 +147,7 @@ export default function GardenSidebar({
             data-plant={option.plant}
             data-spacing={option.spacing}
             onDragStart={(event) => onPaletteDrag(event, { type: 'plant', plant: option.plant, spacing: option.spacing })}
+            onPointerDown={(event) => handlePaletteTap(event, { type: 'plant', plant: option.plant, spacing: option.spacing })}
             key={option.plant}
           >
             <span className={`material-icons-outlined plant-icon ${option.iconClass}`}>{option.icon}</span>

@@ -34,33 +34,6 @@ const handleChatRequest = async (req, res) => {
     }
 };
 
-const handleGardenPlanRequest = async (req, res) => {
-    try {
-        const { area, sunlight, climate, budget } = req.body || {};
-        const sunlightOptions = ['full sun', 'partial sun', 'shade'];
-        const climateOptions = ['warm', 'temperate', 'cold'];
-
-        if (!Number.isFinite(area) || area < 0.5 || area > 1000) {
-            return res.status(400).json({ error: 'Terrace area must be between 0.5 and 1,000 square meters.' });
-        }
-        if (!sunlightOptions.includes(sunlight)) {
-            return res.status(400).json({ error: 'Choose full sun, partial sun, or shade.' });
-        }
-        if (!climateOptions.includes(climate)) {
-            return res.status(400).json({ error: 'Choose a valid growing climate.' });
-        }
-        if (!Number.isSafeInteger(budget) || budget < 1000 || budget > 10000000) {
-            return res.status(400).json({ error: 'Budget must be between INR 1,000 and INR 10,000,000.' });
-        }
-
-        const plan = await chatModel.generateGardenPlan({ area, sunlight, climate, budget });
-        return res.json({ plan });
-    } catch (error) {
-        return handleModelError(error, res);
-    }
-};
-
 module.exports = {
     handleChatRequest,
-    handleGardenPlanRequest,
 };
