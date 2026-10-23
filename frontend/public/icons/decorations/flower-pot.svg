@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 54" role="img">
+  <defs>
+    <linearGradient id="pot" x2="1">
+      <stop stop-color="#9b5038"/>
+      <stop offset=".45" stop-color="#d27b50"/>
+      <stop offset="1" stop-color="#8a4332"/>
+    </linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#263c29" flood-opacity=".25"/></filter>
+  </defs>
+  <ellipse cx="24" cy="49" rx="16" ry="3" fill="#30492f" opacity=".2"/>
+  <g filter="url(#shadow)">
+    <path fill="#4b3527" d="M10 24h28q-2 4-6 5H15z"/>
+    <path fill="#30291e" d="M12 24q12-5 24 0l-3 5H15z"/>
+    <g stroke="#477d3f" stroke-width="1.2">
+      <path fill="#60994b" d="M23 25C9 17 10 9 14 5c7 4 10 10 10 19Z"/>
+      <path fill="#78ab54" d="M24 24C19 8 25 3 30 2c4 8 2 15-4 23Z"/>
+      <path fill="#4f8740" d="M23 25C28 12 36 10 41 14c-3 8-8 12-17 13Z"/>
+      <path fill="#87b85a" d="M23 25C11 23 5 28 6 34c8 3 14 0 18-7Z"/>
+      <path fill="#5c9545" d="M24 25C34 19 41 22 42 28c-6 6-12 6-19 2Z"/>
+    </g>
+    <path fill="url(#pot)" stroke="#713c2c" stroke-width="1.5" d="M8 27h32l-4 23H12z"/>
+    <path fill="#df9064" d="M10 29h28l-1 4H11z"/>
+    <path fill="none" stroke="#e8a37b" stroke-width="1.2" d="m16 36 2 10m14-10-2 10"/>
+  </g>
+</svg>
