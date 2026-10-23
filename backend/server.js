@@ -13,7 +13,7 @@ app.set('trust proxy', 1);
 app.use((req, res, next) => {
     const accept = req.get('accept') || '';
     if (req.method === 'GET' && accept.includes('text/html')) {
-        console.log(`[visitor] ${new Date().toISOString()} ${req.ip}`);
+        console.log(`[visitor] ${new Date().toISOString()} ${req.ip} ${req.path}`);
     }
     next();
 });
