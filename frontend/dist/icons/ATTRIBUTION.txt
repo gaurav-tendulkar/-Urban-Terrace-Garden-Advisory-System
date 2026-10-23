@@ -1,0 +1,18 @@
+Plant icons
+The 31 SVGs in plants/ are original illustrations created for this project.
+
+Decoration icons
+These original SVG illustrations were created for this project and are used by
+the garden builder:
+bench.svg, blossom.svg, deciduous-tree.svg, fence.svg, flower-pot.svg, flower.svg,
+garden-arch.svg, garden-light.svg, pathway.svg, stepping-stones.svg,
+water-feature.svg.
+
+The following additional decoration SVGs remain from Twemoji and are not used by
+the garden builder:
+four-leaf-clover.svg, potted-plant.svg, rose.svg, seedling.svg, sunflower.svg,
+tulip.svg.
+Copyright 2020-present Twitter, Inc and other contributors
+Source: https://github.com/jdecked/twemoji
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License text: CC-BY-4.0.txt

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" role="img">
+  <defs>
+    <radialGradient id="water" cx=".35" cy=".3">
+      <stop stop-color="#b4e2d7"/>
+      <stop offset=".65" stop-color="#58a9a3"/>
+      <stop offset="1" stop-color="#347d7e"/>
+    </radialGradient>
+    <linearGradient id="stone" x2="0" y2="1">
+      <stop stop-color="#e0d2b4"/>
+      <stop offset="1" stop-color="#a68c69"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="36" cy="59" rx="31" ry="9" fill="#324d35" opacity=".2"/>
+  <path fill="url(#stone)" stroke="#806b50" stroke-width="2" d="M5 42q31-15 62 0v14q-31 14-62 0z"/>
+  <path fill="url(#water)" stroke="#397d7d" stroke-width="1.5" d="M10 43q26-13 52 0-26 13-52 0z"/>
+  <path fill="none" stroke="#d5f2e7" stroke-linecap="round" stroke-width="2" d="M18 44q18-8 36 0m-29 4q11-5 22 0"/>
+  <path fill="#c4a97f" stroke="#806b50" stroke-width="2" d="M25 28h22l-3 15H28z"/>
+  <path fill="url(#stone)" stroke="#806b50" stroke-width="2" d="M20 25q16-9 32 0l-4 6H24z"/>
+  <path fill="none" stroke="#5ab5bd" stroke-linecap="round" stroke-width="3" d="M36 25V12"/>
+  <path fill="none" stroke="#8ed6d2" stroke-linecap="round" stroke-width="2" d="M31 24q-9-8-6-15m16 15q9-8 6-15"/>
+  <circle cx="36" cy="10" r="2" fill="#d4f2e8"/>
+</svg>
