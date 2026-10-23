@@ -17,7 +17,7 @@ export default function LandingPage() {
             <a href="/build-garden" className="btn-primary home-build-cta">
               <span className="material-icons-outlined" aria-hidden="true">edit_square</span> Start designing
             </a>
-            <a href="#garden-tools" className="btn-secondary home-secondary-cta">Explore the garden studio</a>
+            <a href="/chat" className="btn-secondary home-secondary-cta">Talk to AI</a>
           </div>
           <div className="home-hero-proof">
             <span><span className="material-icons-outlined" aria-hidden="true">straighten</span> Set your dimensions</span>

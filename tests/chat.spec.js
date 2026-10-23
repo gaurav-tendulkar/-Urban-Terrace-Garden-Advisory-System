@@ -20,6 +20,25 @@ test('home page demonstrates how to build a garden', async ({ page }) => {
   await expect(section.locator('.garden-demo-bed-one')).toHaveCSS('animation-name', 'none');
 });
 
+test('mobile home navigation keeps the Talk to AI link visible', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto('/');
+
+  const talkToAiLink = page.locator('.home-nav-ai-cta');
+  await expect(talkToAiLink).toBeVisible();
+  await expect(talkToAiLink).toHaveAttribute('href', '/chat');
+  await expect(page.locator('.home-nav-menu-toggle')).toBeVisible();
+  await expect(page.locator('.home-nav-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.home-nav-links')).toBeHidden();
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth))
+    .toBeLessThanOrEqual(320);
+
+  await page.getByRole('button', { name: 'Open navigation menu' }).click();
+  await expect(page.getByRole('link', { name: 'Build Garden' })).toBeVisible();
+  await expect(page.locator('.home-nav-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
+  await expect(talkToAiLink).toBeVisible();
+});
+
 test('suggested question sends a message and renders the advisor reply', async ({ page }) => {
   let requestBody;
 
