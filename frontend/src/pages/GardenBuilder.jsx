@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import GardenCanvas from '../components/GardenCanvas.jsx';
 import GardenSidebar from '../components/GardenSidebar.jsx';
 import SiteNav from '../components/SiteNav.jsx';
+import { getItemBaseDimensions, getItemDimensions, hasValidBedDimensions } from '../utils/gardenItems.js';
+import { plantProfileById, plantProfiles } from '../data/plantCatalog.js';
+import { gardenDecorationById, getDecorationDimensions } from '../data/gardenDecorations.js';
 
 const STORAGE_KEY = 'botanica-garden-designs-v1';
 const plantCalendar = {
@@ -26,17 +29,27 @@ const plantCalendar = {
     cold: 'Sow: Apr-Jul | Harvest: Jun-Sep',
   },
 };
-const plantNames = Object.keys(plantCalendar);
+const plantNames = plantProfiles.map((profile) => profile.id);
 const MIN_GARDEN_DIMENSION = 1;
 const MAX_GARDEN_DIMENSION = 20;
-const DEFAULT_GARDEN_DIMENSION = 4;
+const DEFAULT_GARDEN_WIDTH = 8;
+const DEFAULT_GARDEN_LENGTH = 6;
 const PIXELS_PER_METER = 100;
+const DEFAULT_FLOOR_COLOR = '#9bc77e';
+const FLOOR_TEXTURES = ['grass', 'soil', 'gravel', 'stone', 'wood'];
 
 function readDesigns() {
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (!stored) return {};
   const parsed = JSON.parse(stored);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || Object.keys(parsed).length > 100) {
+    throw new Error('Browser storage contains an invalid garden design list.');
+  }
+  for (const [name, snapshot] of Object.entries(parsed)) {
+    if (!name.trim() || name.length > 60 || !isValidSnapshot(snapshot)) {
+      throw new Error('Browser storage contains an invalid garden design.');
+    }
+  }
   return parsed;
 }
 
@@ -44,29 +57,60 @@ function isValidSnapshot(snapshot) {
   if (!snapshot || snapshot.version !== 1 || !Array.isArray(snapshot.items) || !['warm', 'temperate', 'cold'].includes(snapshot.zone)) {
     return false;
   }
+  if (
+    (snapshot.floorColor !== undefined && (typeof snapshot.floorColor !== 'string' || !/^#[\da-f]{6}$/i.test(snapshot.floorColor)))
+    || (snapshot.floorTexture !== undefined && !FLOOR_TEXTURES.includes(snapshot.floorTexture))
+  ) return false;
   return snapshot.items.every((item) => {
-    if (!item || !Number.isFinite(item.x) || !Number.isFinite(item.y) || item.x < 0 || item.y < 0) return false;
-    if (item.type === 'bed') return ['rect', 'circle'].includes(item.shape);
+  if (
+    !item
+    || !Number.isFinite(item.x)
+    || !Number.isFinite(item.y)
+    || item.x < 0
+    || item.y < 0
+    || (item.rotationCentered !== undefined && typeof item.rotationCentered !== 'boolean')
+    || (item.rotation !== undefined && (!Number.isFinite(item.rotation) || item.rotation < 0 || item.rotation >= 360))
+  ) return false;
+  if (item.type === 'bed') return ['rect', 'circle'].includes(item.shape) && hasValidBedDimensions(item);
+  if (item.type === 'decoration') {
+    return Object.hasOwn(gardenDecorationById, item.decoration)
+      && (item.scale === undefined || (Number.isFinite(item.scale) && item.scale >= 0.5 && item.scale <= 2.5));
+    }
     return item.type === 'plant'
       && plantNames.includes(item.plant)
       && Number.isFinite(item.spacing)
-      && item.spacing >= 0;
+      && item.spacing >= 0
+      && (item.scale === undefined || (Number.isFinite(item.scale) && item.scale >= 0.5 && item.scale <= 2.5));
   });
 }
 
 function clampItemToGarden(item, width, length) {
-  const itemWidth = item.type === 'bed' ? (item.shape === 'circle' ? 150 : 200) : 40;
-  const itemHeight = item.type === 'bed' ? (item.shape === 'circle' ? 150 : 100) : 40;
+  const dimensions = getItemDimensions(item);
   return {
     ...item,
-    x: Math.min(item.x, Math.max(0, width * PIXELS_PER_METER - itemWidth)),
-    y: Math.min(item.y, Math.max(0, length * PIXELS_PER_METER - itemHeight)),
+    x: Math.min(item.x, Math.max(0, width * PIXELS_PER_METER - dimensions.width)),
+    y: Math.min(item.y, Math.max(0, length * PIXELS_PER_METER - dimensions.height)),
+  };
+}
+
+function centerRotatedItem(item) {
+  if (item.type === 'bed' || !item.rotation || item.rotationCentered === true) return item;
+  const scale = Number.isFinite(item.scale) ? item.scale : 1;
+  const baseDimensions = item.type === 'decoration'
+    ? getDecorationDimensions(item.decoration)
+    : { width: 40, height: 40 };
+  if (!baseDimensions) return item;
+  const currentDimensions = getItemDimensions(item);
+  return {
+    ...item,
+    x: item.x + (baseDimensions.width * scale - currentDimensions.width) / 2,
+    y: item.y + (baseDimensions.height * scale - currentDimensions.height) / 2,
+    rotationCentered: true,
   };
 }
 
 export default function GardenBuilder() {
   const nextId = useRef(0);
-  const itemDragData = useRef(null);
   const canvasRef = useRef(null);
   const viewportRef = useRef(null);
   const [items, setItems] = useState([]);
@@ -77,35 +121,39 @@ export default function GardenBuilder() {
   const [savedDesigns, setSavedDesigns] = useState({});
   const [status, setStatus] = useState('Your saved designs will appear here.');
   const [statusIsError, setStatusIsError] = useState(false);
-  const [draggingId, setDraggingId] = useState(null);
-  const [width, setWidth] = useState(DEFAULT_GARDEN_DIMENSION);
-  const [length, setLength] = useState(DEFAULT_GARDEN_DIMENSION);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [width, setWidth] = useState(DEFAULT_GARDEN_WIDTH);
+  const [length, setLength] = useState(DEFAULT_GARDEN_LENGTH);
+  const [floorColor, setFloorColor] = useState(DEFAULT_FLOOR_COLOR);
+  const [floorTexture, setFloorTexture] = useState('grass');
   const [canvasScale, setCanvasScale] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [mobileView, setMobileView] = useState('design');
+  const [selectedPlant, setSelectedPlant] = useState(null);
   const renderedScale = canvasScale * zoom;
 
   useEffect(() => {
     try {
       setSavedDesigns(readDesigns());
+      setDesignStatus('Your saved designs are private to this browser.');
     } catch (error) {
-      console.error('Could not read saved designs:', error);
-      setStatus('Unable to read saved designs from browser storage.');
-      setStatusIsError(true);
+      console.error('Could not read browser garden designs:', error);
+      setDesignStatus(`Saved designs unavailable: ${error.message}`, true);
     }
   }, []);
-
-  useEffect(() => {
-    if (locked) setDraggingId(null);
-  }, [locked]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return undefined;
 
     const updateScale = () => {
-      const availableWidth = viewport.clientWidth;
-      const availableHeight = viewport.clientHeight;
+      const viewportStyle = window.getComputedStyle(viewport);
+      const availableWidth = viewport.clientWidth
+        - Number.parseFloat(viewportStyle.paddingLeft)
+        - Number.parseFloat(viewportStyle.paddingRight);
+      const availableHeight = viewport.clientHeight
+        - Number.parseFloat(viewportStyle.paddingTop)
+        - Number.parseFloat(viewportStyle.paddingBottom);
       if (!availableWidth || !availableHeight) return;
 
       const nextScale = Math.min(
@@ -124,35 +172,6 @@ export default function GardenBuilder() {
     return () => observer.disconnect();
   }, [width, length]);
 
-  useEffect(() => {
-    function moveItem(event) {
-      const drag = itemDragData.current;
-      if (!drag) return;
-      setItems((current) => current.map((item) => (
-        item.id === drag.id
-          ? clampItemToGarden({
-            ...item,
-            x: Math.max(0, drag.left + (event.clientX - drag.startX) / renderedScale),
-            y: Math.max(0, drag.top + (event.clientY - drag.startY) / renderedScale),
-          }, width, length)
-          : item
-      )));
-    }
-    function stopDragging() {
-      if (!itemDragData.current) return;
-      itemDragData.current = null;
-      setDraggingId(null);
-    }
-    window.addEventListener('pointermove', moveItem);
-    window.addEventListener('pointerup', stopDragging);
-    window.addEventListener('pointercancel', stopDragging);
-    return () => {
-      window.removeEventListener('pointermove', moveItem);
-      window.removeEventListener('pointerup', stopDragging);
-      window.removeEventListener('pointercancel', stopDragging);
-    };
-  }, [renderedScale, width, length]);
-
   function setDesignStatus(message, isError = false) {
     setStatus(message);
     setStatusIsError(isError);
@@ -164,8 +183,8 @@ export default function GardenBuilder() {
       setSavedDesigns(designs);
       return true;
     } catch (error) {
-      console.error('Could not save designs:', error);
-      setDesignStatus('Saving failed. Browser storage may be full or unavailable.', true);
+      console.error('Could not save designs in this browser:', error);
+      setDesignStatus('Saving failed: browser storage is unavailable or full.', true);
       return false;
     }
   }
@@ -187,20 +206,32 @@ export default function GardenBuilder() {
       return;
     }
 
-    const isBed = transferData?.type === 'bed' && ['rect', 'circle'].includes(transferData.shape);
+    const isBed = transferData?.type === 'bed'
+      && ['rect', 'circle'].includes(transferData.shape)
+      && hasValidBedDimensions(transferData);
     const isPlant = transferData?.type === 'plant'
       && plantNames.includes(transferData.plant)
       && Number.isFinite(transferData.spacing)
       && transferData.spacing >= 0;
-    if (!isBed && !isPlant) return;
+    const isDecoration = transferData?.type === 'decoration'
+      && Object.hasOwn(gardenDecorationById, transferData.decoration);
+    if (!isBed && !isPlant && !isDecoration) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
+    const itemData = isDecoration
+      ? { ...transferData, ...getDecorationDimensions(transferData.decoration) }
+      : transferData;
+    const dimensions = getItemDimensions(itemData);
+    const offsetX = isDecoration ? dimensions.width / 2 : 20;
+    const offsetY = isDecoration ? dimensions.height / 2 : 20;
     const newItem = makeItem(
-      transferData,
-      (event.clientX - rect.left) / renderedScale - 20,
-      (event.clientY - rect.top) / renderedScale - 20,
+      itemData,
+      (event.clientX - rect.left) / renderedScale - offsetX,
+      (event.clientY - rect.top) / renderedScale - offsetY,
     );
-    setItems((current) => [...current, clampItemToGarden(newItem, width, length)]);
+    const positionedItem = clampItemToGarden(newItem, width, length);
+    setItems((current) => [...current, positionedItem]);
+    setSelectedItemId(positionedItem.id);
   }
 
   function startPaletteDrag(event, data) {
@@ -212,29 +243,28 @@ export default function GardenBuilder() {
   function addPaletteItem(data) {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const itemWidth = data.type === 'bed' ? (data.shape === 'circle' ? 150 : 200) : 40;
-    const itemHeight = data.type === 'bed' ? (data.shape === 'circle' ? 150 : 100) : 40;
+    if (data.type === 'decoration' && !Object.hasOwn(gardenDecorationById, data.decoration)) return;
+    const itemData = data.type === 'decoration'
+      ? { ...data, ...getDecorationDimensions(data.decoration) }
+      : data;
+    const dimensions = getItemDimensions(itemData);
     const item = makeItem(
-      data,
-      (width * PIXELS_PER_METER - itemWidth) / 2,
-      (length * PIXELS_PER_METER - itemHeight) / 2,
+      itemData,
+      (width * PIXELS_PER_METER - dimensions.width) / 2,
+      (length * PIXELS_PER_METER - dimensions.height) / 2,
     );
-    setItems((current) => [...current, clampItemToGarden(item, width, length)]);
+    const positionedItem = clampItemToGarden(item, width, length);
+    setItems((current) => [...current, positionedItem]);
+    setSelectedItemId(positionedItem.id);
   }
 
-  function startDrag(event, item) {
-    if (locked || event.target.closest('.delete-btn')) return;
-    const canvas = canvasRef.current;
-    if (!canvas?.contains(event.currentTarget)) return;
-    itemDragData.current = {
-      id: item.id,
-      startX: event.clientX,
-      startY: event.clientY,
-      left: item.x,
-      top: item.y,
-    };
-    setDraggingId(item.id);
-    event.preventDefault();
+  function moveItem(id, x, y) {
+    if (locked) return;
+    setItems((current) => current.map((item) => (
+      item.id === id
+        ? clampItemToGarden({ ...item, x, y }, width, length)
+        : item
+    )));
   }
 
   function updateGardenDimension(dimension, value) {
@@ -249,13 +279,105 @@ export default function GardenBuilder() {
     setItems((current) => current.map((item) => clampItemToGarden(item, nextWidth, nextLength)));
   }
 
+  function rotateItem(id, degrees) {
+    if (locked) return;
+    setItems((current) => current.map((item) => {
+      if (item.id !== id) return item;
+
+      const centeredItem = centerRotatedItem(item);
+      const currentDimensions = getItemDimensions(centeredItem);
+      const requestedRotation = Number.isFinite(degrees)
+        ? degrees
+        : (centeredItem.rotation ?? 0) + 90;
+      const rotation = (Math.round((((requestedRotation % 360) + 360) % 360) * 100) / 100) % 360;
+      const rotatedItem = { ...centeredItem, rotation, rotationCentered: true };
+      const rotatedDimensions = getItemDimensions(rotatedItem);
+      const nextItem = {
+        ...rotatedItem,
+        x: centeredItem.x + (currentDimensions.width - rotatedDimensions.width) / 2,
+        y: centeredItem.y + (currentDimensions.height - rotatedDimensions.height) / 2,
+      };
+      return clampItemToGarden(nextItem, width, length);
+    }));
+  }
+
+  function resizeItem(id, direction) {
+    if (locked) return;
+    const requestedFactor = direction === 'larger' ? 1.1 : 1 / 1.1;
+    setItems((current) => current.map((item) => {
+      if (item.id !== id) return item;
+      if (item.type === 'bed') {
+        const dimensions = getItemBaseDimensions(item);
+        const min = 25;
+        const max = 2000;
+        const factor = requestedFactor > 1
+          ? Math.min(requestedFactor, max / dimensions.width, max / dimensions.height)
+          : Math.max(requestedFactor, min / dimensions.width, min / dimensions.height);
+        const nextWidth = dimensions.width * factor;
+        const nextHeight = dimensions.height * factor;
+        return clampItemToGarden({ ...item, width: nextWidth, height: nextHeight }, width, length);
+      }
+      const scale = Number.isFinite(item.scale) ? item.scale : 1;
+      return clampItemToGarden({ ...item, scale: Math.max(0.5, Math.min(2.5, scale * requestedFactor)) }, width, length);
+    }));
+  }
+
+  function duplicateItem(id) {
+    if (locked) return;
+    const source = items.find((item) => item.id === id);
+    if (!source) return;
+    const duplicate = clampItemToGarden(
+      makeItem(source, source.x + 20, source.y + 20),
+      width,
+      length,
+    );
+    setItems((current) => [...current, duplicate]);
+    setSelectedItemId(duplicate.id);
+  }
+
+  function handleItemKeyDown(event, item) {
+    if (locked || event.target.closest('.item-action')) return;
+    const movement = event.shiftKey ? 10 : 1;
+    const offsets = {
+      ArrowUp: [0, -movement],
+      ArrowDown: [0, movement],
+      ArrowLeft: [-movement, 0],
+      ArrowRight: [movement, 0],
+    };
+    if (offsets[event.key]) {
+      event.preventDefault();
+      const [dx, dy] = offsets[event.key];
+      setItems((current) => current.map((placed) => (
+        placed.id === item.id
+          ? clampItemToGarden({ ...placed, x: placed.x + dx, y: placed.y + dy }, width, length)
+          : placed
+      )));
+    } else if (event.key.toLowerCase() === 'r') {
+      event.preventDefault();
+      rotateItem(item.id);
+    } else if (event.key === '+' || event.key === '=') {
+      event.preventDefault();
+      resizeItem(item.id, 'larger');
+    } else if (event.key === '-') {
+      event.preventDefault();
+      resizeItem(item.id, 'smaller');
+    } else if (event.key.toLowerCase() === 'd') {
+      event.preventDefault();
+      duplicateItem(item.id);
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault();
+      setItems((current) => current.filter((placed) => placed.id !== item.id));
+      setSelectedItemId(null);
+    }
+  }
+
   function getSnapshotDimensions(snapshot) {
-    const snapshotWidth = snapshot.width ?? DEFAULT_GARDEN_DIMENSION;
-    const snapshotLength = snapshot.length ?? DEFAULT_GARDEN_DIMENSION;
+    const snapshotWidth = snapshot.width ?? DEFAULT_GARDEN_WIDTH;
+    const snapshotLength = snapshot.length ?? DEFAULT_GARDEN_LENGTH;
     if (
-      !Number.isFinite(snapshotWidth) ||
-      snapshotWidth < MIN_GARDEN_DIMENSION ||
-      snapshotWidth > MAX_GARDEN_DIMENSION ||
+      (snapshot.width !== undefined && (!Number.isFinite(snapshotWidth) ||
+        snapshotWidth < MIN_GARDEN_DIMENSION ||
+        snapshotWidth > MAX_GARDEN_DIMENSION)) ||
       !Number.isFinite(snapshotLength) ||
       snapshotLength < MIN_GARDEN_DIMENSION ||
       snapshotLength > MAX_GARDEN_DIMENSION
@@ -271,28 +393,27 @@ export default function GardenBuilder() {
     setPlanApplied(false);
   }
 
-  function saveCurrentDesign() {
+  async function saveCurrentDesign() {
     const name = designName.trim();
     if (!name) {
       setDesignStatus('Enter a name for your garden design.', true);
       document.getElementById('design-name')?.focus();
       return;
     }
-
-    let designs;
-    try {
-      designs = readDesigns();
-    } catch (error) {
-      console.error('Could not read saved designs:', error);
-      setDesignStatus('Unable to read saved designs from browser storage.', true);
+    if (name === '__proto__') {
+      setDesignStatus('This design name is reserved. Choose a different name.', true);
       return;
     }
+
+    const designs = { ...savedDesigns };
     const existingName = Object.keys(designs).find((key) => key.toLowerCase() === name.toLowerCase());
     const snapshot = {
       version: 1,
       zone,
       width,
       length,
+      floorColor,
+      floorTexture,
       items: items.map(({ id, ...item }) => item),
       updatedAt: new Date().toISOString(),
     };
@@ -300,7 +421,7 @@ export default function GardenBuilder() {
     if (existingName && existingName !== selectedDesign) {
       if (!window.confirm(`A design named "${existingName}" already exists. Overwrite it?`)) return;
       designs[existingName] = snapshot;
-      if (!persistDesigns(designs)) return;
+      if (!await persistDesigns(designs)) return;
       setSelectedDesign(existingName);
       setDesignName(existingName);
       setDesignStatus(`Updated "${existingName}" successfully.`);
@@ -308,7 +429,7 @@ export default function GardenBuilder() {
     }
 
     designs[name] = snapshot;
-    if (!persistDesigns(designs)) return;
+    if (!await persistDesigns(designs)) return;
     setSelectedDesign(name);
     setDesignName(name);
     setDesignStatus(`Garden design "${name}" saved successfully.`);
@@ -319,14 +440,7 @@ export default function GardenBuilder() {
       setDesignStatus('Select a saved design to load.', true);
       return;
     }
-    let designs;
-    try {
-      designs = readDesigns();
-    } catch (error) {
-      console.error('Could not read saved designs:', error);
-      setDesignStatus('Unable to read saved designs from browser storage.', true);
-      return;
-    }
+    const designs = savedDesigns;
     const snapshot = designs[selectedDesign];
     if (!isValidSnapshot(snapshot)) {
       setDesignStatus('This saved design is invalid or incompatible.', true);
@@ -341,86 +455,43 @@ export default function GardenBuilder() {
     setZone(snapshot.zone);
     setWidth(dimensions.width);
     setLength(dimensions.length);
+    setFloorColor(snapshot.floorColor ?? DEFAULT_FLOOR_COLOR);
+    setFloorTexture(snapshot.floorTexture ?? 'grass');
+    setSelectedItemId(null);
     setItems(snapshot.items.map((item) => {
-      const positionedItem = clampItemToGarden(item, dimensions.width, dimensions.length);
+      const positionedItem = clampItemToGarden(centerRotatedItem(item), dimensions.width, dimensions.length);
       return makeItem(positionedItem, positionedItem.x, positionedItem.y);
     }));
     setDesignName(selectedDesign);
     setDesignStatus(`Garden design "${selectedDesign}" loaded successfully.`);
   }
 
-  function renameSelectedDesign() {
-    const newName = designName.trim();
-    if (!selectedDesign) {
-      setDesignStatus('Select a design to rename.', true);
-      return;
-    }
-    if (!newName) {
-      setDesignStatus('Enter the new design name.', true);
-      return;
-    }
-
-    let designs;
-    try {
-      designs = readDesigns();
-    } catch (error) {
-      console.error('Could not read saved designs:', error);
-      setDesignStatus('Unable to read saved designs from browser storage.', true);
-      return;
-    }
-    if (!Object.hasOwn(designs, selectedDesign)) {
-      setSavedDesigns(designs);
-      setDesignStatus('The selected design no longer exists.', true);
-      return;
-    }
-    const duplicate = Object.keys(designs).find((key) => key.toLowerCase() === newName.toLowerCase());
-    if (duplicate && duplicate !== selectedDesign) {
-      setDesignStatus('A design with that name already exists.', true);
-      return;
-    }
-    if (selectedDesign === newName) {
-      setDesignStatus('The design name is unchanged.');
-      return;
-    }
-
-    designs[newName] = { ...designs[selectedDesign], updatedAt: new Date().toISOString() };
-    delete designs[selectedDesign];
-    if (!persistDesigns(designs)) return;
-    setSelectedDesign(newName);
-    setDesignName(newName);
-    setDesignStatus(`Design renamed to "${newName}".`);
-  }
-
-  function deleteSelectedDesign() {
+  async function deleteSelectedDesign() {
     if (!selectedDesign) {
       setDesignStatus('Select a saved design to delete.', true);
       return;
     }
     if (!window.confirm(`Permanently delete the saved design "${selectedDesign}"?`)) return;
 
-    let designs;
-    try {
-      designs = readDesigns();
-    } catch (error) {
-      console.error('Could not read saved designs:', error);
-      setDesignStatus('Unable to read saved designs from browser storage.', true);
-      return;
-    }
+    const designs = { ...savedDesigns };
     if (!Object.hasOwn(designs, selectedDesign)) {
       setSavedDesigns(designs);
       setDesignStatus('The selected design no longer exists.', true);
       return;
     }
     delete designs[selectedDesign];
-    if (!persistDesigns(designs)) return;
+    if (!await persistDesigns(designs)) return;
     setSelectedDesign('');
     setDesignName('');
     setDesignStatus(`Saved design "${selectedDesign}" deleted.`);
   }
 
   const calendarPlants = [...new Set(items.filter((item) => item.type === 'plant').map((item) => item.plant))]
-    .map((plant) => ({ plant, info: plantCalendar[plant]?.[zone] }))
-    .filter((item) => item.info);
+    .map((plant) => ({
+      plant: plantProfileById[plant]?.plant ?? plant,
+      info: plantCalendar[plant]?.[zone]
+        ?? `${plantProfileById[plant]?.plantingSeason?.join(', ') ?? 'Season varies by region'} | Harvest: ${plantProfileById[plant]?.timeToHarvest ?? 'See plant details'}`,
+    }));
 
   return (
     <>
@@ -459,15 +530,23 @@ export default function GardenBuilder() {
           }}
           onSave={saveCurrentDesign}
           onLoad={loadSelectedDesign}
-          onRename={renameSelectedDesign}
           onDelete={deleteSelectedDesign}
           status={status}
           statusIsError={statusIsError}
           plants={calendarPlants}
+          selectedPlant={selectedPlant}
+          onSelectPlant={setSelectedPlant}
+          plantProfiles={plantProfiles}
           onPaletteDrag={startPaletteDrag}
           onPaletteTap={addPaletteItem}
           width={width}
           length={length}
+          floorColor={floorColor}
+          floorTexture={floorTexture}
+          onFloorStyleChange={(style) => {
+            setFloorColor(style.color);
+            setFloorTexture(style.texture);
+          }}
           onDimensionsChange={updateGardenDimension}
         />
         <div className="canvas-wrapper">
@@ -476,14 +555,25 @@ export default function GardenBuilder() {
             canvasRef={canvasRef}
             items={items}
             locked={locked}
-            draggingId={draggingId}
+            selectedItemId={selectedItemId}
             onDropItem={dropItem}
             onRemoveItem={(id) => {
-              if (!locked) setItems((current) => current.filter((item) => item.id !== id));
+              if (!locked) {
+                setItems((current) => current.filter((item) => item.id !== id));
+                setSelectedItemId(null);
+              }
             }}
-            onStartDrag={startDrag}
+            onRotateItem={rotateItem}
+            onResizeItem={resizeItem}
+            onDuplicateItem={duplicateItem}
+            onItemKeyDown={handleItemKeyDown}
+            onSelectItem={setSelectedItemId}
+            onDeselect={() => setSelectedItemId(null)}
+            onMoveItem={moveItem}
             width={width}
             length={length}
+            floorColor={floorColor}
+            floorTexture={floorTexture}
             scale={renderedScale}
             zoom={zoom}
             onZoomChange={setZoom}

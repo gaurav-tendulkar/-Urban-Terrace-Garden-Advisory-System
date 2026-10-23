@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" role="img">
+  <defs>
+    <radialGradient id="leaf" cx=".35" cy=".3">
+      <stop stop-color="#a9cd75"/><stop offset="1" stop-color="#4e8748"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="36" cy="63" rx="29" ry="6" fill="#344b31" opacity=".2"/>
+  <g fill="url(#leaf)" stroke="#3e7541" stroke-width="1.3">
+    <ellipse cx="23" cy="39" rx="15" ry="10" transform="rotate(-35 23 39)"/>
+    <ellipse cx="47" cy="39" rx="15" ry="10" transform="rotate(35 47 39)"/>
+    <ellipse cx="31" cy="52" rx="15" ry="9" transform="rotate(15 31 52)"/>
+    <ellipse cx="44" cy="52" rx="14" ry="9" transform="rotate(-17 44 52)"/>
+    <ellipse cx="35" cy="29" rx="15" ry="10" transform="rotate(-8 35 29)"/>
+  </g>
+  <g fill="none" stroke="#c5df91" stroke-width="1.2">
+    <path d="M14 43q9-6 17-9m15 8q-8-5-14-11M25 54q7-6 10-9m14 10q-7-6-12-8"/>
+  </g>
+  <g stroke="#aa5960" stroke-width="1">
+    <g transform="translate(24 25)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#e990a6"/><ellipse cy="6" rx="3.5" ry="7" fill="#e990a6"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#f2b6b3"/><ellipse cx="6" rx="7" ry="3.5" fill="#f2b6b3"/>
+      <circle r="3" fill="#e9bd54"/>
+    </g>
+    <g transform="translate(48 23)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#f2b0b5"/><ellipse cy="6" rx="3.5" ry="7" fill="#f2b0b5"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#dc829d"/><ellipse cx="6" rx="7" ry="3.5" fill="#dc829d"/>
+      <circle r="3" fill="#efcc65"/>
+    </g>
+    <g transform="translate(36 45)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#f5c7a0"/><ellipse cy="6" rx="3.5" ry="7" fill="#f5c7a0"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#e99a92"/><ellipse cx="6" rx="7" ry="3.5" fill="#e99a92"/>
+      <circle r="3" fill="#e9bd54"/>
+    </g>
+  </g>
+</svg>

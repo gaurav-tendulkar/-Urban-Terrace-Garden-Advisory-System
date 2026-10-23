@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import LandingPage from './pages/LandingPage.jsx';
-import ChatPage from './pages/ChatPage.jsx';
-import GardenBuilder from './pages/GardenBuilder.jsx';
+
+const ChatPage = lazy(() => import('./pages/ChatPage.jsx'));
+const GardenBuilder = lazy(() => import('./pages/GardenBuilder.jsx'));
 
 const pages = {
   '/': LandingPage,
@@ -11,7 +12,13 @@ const pages = {
 
 export default function App() {
   const Page = pages[window.location.pathname] || LandingPage;
-  const bodyClass = Page === LandingPage ? 'landing-page-body' : Page === GardenBuilder ? 'builder-body' : '';
+  const bodyClass = Page === LandingPage
+    ? 'landing-page-body'
+    : Page === GardenBuilder
+      ? 'builder-body'
+      : Page === ChatPage
+        ? 'chat-page-body'
+        : '';
 
   useEffect(() => {
     document.body.className = bodyClass;
@@ -20,5 +27,9 @@ export default function App() {
     };
   }, [bodyClass]);
 
-  return <Page />;
+  return (
+    <Suspense fallback={<div className="page-loading" role="status">Loading garden studio…</div>}>
+      <Page />
+    </Suspense>
+  );
 }

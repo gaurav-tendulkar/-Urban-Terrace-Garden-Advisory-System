@@ -1,6 +1,6 @@
 import Brand from './Brand.jsx';
 
-export default function SiteNav({ builder = false }) {
+export default function SiteNav({ builder = false, homeOnly = false }) {
   return (
     <nav className={`landing-nav${builder ? ' builder-nav' : ''}`}>
       <Brand />
@@ -8,14 +8,13 @@ export default function SiteNav({ builder = false }) {
         {builder ? (
           <>
             <li><a href="/">Home</a></li>
-            <li><a href="/chat" className="btn-primary-outline">Talk to AI</a></li>
+            {!homeOnly && <li><a href="/chat" className="btn-primary-outline">Talk to AI</a></li>}
           </>
         ) : (
           <>
             <li><a href="#about">About</a></li>
             <li><a href="/build-garden">Build Garden</a></li>
-            <li><a href="#plant-info">Plant Guides</a></li>
-            <li><a href="#inquiry">Inquiry Form</a></li>
+            <li><a href="#garden-demo">How It Works</a></li>
             <li><a href="/chat" className="btn-primary-outline">Talk to AI</a></li>
           </>
         )}

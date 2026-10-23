@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 80" role="img">
+  <defs>
+    <linearGradient id="soil" x2="0" y2="1">
+      <stop stop-color="#79513a"/><stop offset="1" stop-color="#503b2d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="56" cy="68" rx="51" ry="8" fill="#324a30" opacity=".2"/>
+  <path fill="#b88d5e" stroke="#775539" stroke-width="3" d="M5 22q51-13 102 0v34q-51 13-102 0z"/>
+  <path fill="#d6b27e" stroke="#775539" stroke-width="2" d="M5 22q51-13 102 0-51 14-102 0z"/>
+  <path fill="url(#soil)" d="M12 24q44-11 88 0v28q-44 11-88 0z"/>
+  <g fill="#4f8547">
+    <ellipse cx="24" cy="35" rx="11" ry="5" transform="rotate(-25 24 35)"/>
+    <ellipse cx="43" cy="45" rx="12" ry="5" transform="rotate(22 43 45)"/>
+    <ellipse cx="66" cy="32" rx="12" ry="5" transform="rotate(-20 66 32)"/>
+    <ellipse cx="87" cy="44" rx="12" ry="5" transform="rotate(18 87 44)"/>
+  </g>
+  <g stroke="#9b4b61" stroke-width="1">
+    <g transform="translate(29 29)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#ed9bad"/><ellipse cy="6" rx="3.5" ry="7" fill="#ed9bad"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#f2b1ac"/><ellipse cx="6" rx="7" ry="3.5" fill="#f2b1ac"/>
+      <circle r="3" fill="#e8bd55"/>
+    </g>
+    <g transform="translate(57 43)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#f2c6d0"/><ellipse cy="6" rx="3.5" ry="7" fill="#f2c6d0"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#ee9fae"/><ellipse cx="6" rx="7" ry="3.5" fill="#ee9fae"/>
+      <circle r="3" fill="#f1c75c"/>
+    </g>
+    <g transform="translate(83 29)">
+      <ellipse cy="-6" rx="3.5" ry="7" fill="#f7c3b7"/><ellipse cy="6" rx="3.5" ry="7" fill="#f7c3b7"/>
+      <ellipse cx="-6" rx="7" ry="3.5" fill="#ed9a9a"/><ellipse cx="6" rx="7" ry="3.5" fill="#ed9a9a"/>
+      <circle r="3" fill="#e8bd55"/>
+    </g>
+  </g>
+</svg>
