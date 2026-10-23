@@ -20,7 +20,7 @@ Thumbs.db
 *.pem
 *.key
 playwright.config.cjs
-SECURITY_LOG.md
+SECURITY_LOG.md 
 
 
 
