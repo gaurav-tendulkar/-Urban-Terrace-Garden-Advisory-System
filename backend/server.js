@@ -8,6 +8,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const frontendBuild = path.join(__dirname, '..', 'frontend', 'dist');
 
+app.set('trust proxy', 1);
+
+app.use((req, res, next) => {
+    const accept = req.get('accept') || '';
+    if (req.method === 'GET' && accept.includes('text/html')) {
+        console.log(`[visitor] ${new Date().toISOString()} ${req.ip}`);
+    }
+    next();
+});
+
 app.use(express.json({ limit: '64kb' }));
 app.use('/api/chat', chatRoutes);
 
